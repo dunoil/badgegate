@@ -1,0 +1,1 @@
+{"description":"BadgeGate gate: verifies a Verified by Concordium badge and Agent Card against the Concordium Agent Registry before a hire is allowed.","engines":{"node":">=20"},"name":"badgegate-badge-check","private":true,"scripts":{"check":"node src/cli.js","test":"node --test"},"type":"module","version":"0.1.0"}

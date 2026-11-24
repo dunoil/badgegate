@@ -1,0 +1,26 @@
+# Rust build output
+target/
+**/target/
+
+# Node
+node_modules/
+
+# Wallet material and secrets: never commit any of these
+*.export
+*.pem
+*.key
+*.keys
+.env
+.env.*
+!.env.example
+wallet-exports/
+keys/
+
+# Local tooling state
+concordium-data/
+*.log.local
+
+# Editor and OS noise
+.DS_Store
+.vscode/
+.idea/

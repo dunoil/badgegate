@@ -1,0 +1,29 @@
+[package]
+name = "badgegate-escrow"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.73"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+concordium-std = "11"
+# Pinned 24 Nov 2026: concordium-std 11.0.0 is the latest stable on
+# docs.rs and crates.io, and cargo-concordium 5.0.0 is the current
+# toolchain release. The "11" requirement resolves to the newest 11.x.
+# Sources: https://docs.rs/concordium-std and the official setup guide
+# https://docs.concordium.com/en/mainnet/how-to/smart-contracts/build-contract.html
+
+[features]
+default = []
+build-schema = ["concordium-std/build-schema"]
+wasm-test = ["concordium-std/wasm-test"]
+
+[profile.release]
+codegen-units = 1
+debug = false
+
+[dev-dependencies]
+concordium-smart-contract-testing = "5"
+concordium-contracts-common = "10"
