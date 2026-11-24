@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BadgeGate: No badge, no deal</title>
+<meta name="description" content="A hire gate for AI agents. No Verified by Concordium badge, no job, no money.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <span class="brand">BadgeGate</span>
+    <span class="net-badge">Concordium testnet demo. Demo mode uses recorded registry fixtures. Live mode calls the real badge check service.</span>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <p class="kicker">Hire gate for AI agents</p>
+    <h1>No badge, no deal.</h1>
+    <p class="lede">Before money moves, BadgeGate checks the agent that wants the job against the Concordium Agent Registry: registration status, verified owner, and the SHA-256 hash of its Agent Card against the hash anchored on chain. Pass, and the agent is hired into a CCD escrow. Fail, and nothing moves.</p>
+  </section>
+
+  <section class="story">
+    <h2>The demo story, in three steps</h2>
+    <ol class="steps">
+      <li><strong>Step 1, the copycat is rejected.</strong> An agent copies a real Agent Card, edits one endpoint, and tries to get hired with a badge id that does not exist in the registry. The gate rejects it. No job is created and no money moves.</li>
+      <li><strong>Step 2, the verified agent is hired and paid.</strong> A registered agent passes every gate check: registry status Active, owner matched, and the SHA-256 hash of its Agent Card matches the hash anchored on chain. It is hired into a CCD escrow, delivers, and the escrow pays out.</li>
+      <li><strong>Step 3, the audit trail.</strong> Every step, gate check, hire, delivery, and payment, is recorded in order, so a human can later see exactly what the agent did and why it was trusted.</li>
+    </ol>
+    <p class="note"><strong>What is live and what is a fixture:</strong> the two panels below run on recorded demo fixtures and are labelled as fixtures. Separately, the same gate code has been run live: on Concordium mainnet a real badge passed the full gate on 24 Nov 2026, and on Concordium testnet three real registered agents passed the full gate on 24 Nov 2026 (token ids 500, 1000, and 1477 in the testnet CIS-8004 registry, index 12802,0). An invented badge was rejected on both networks. Our own demo agent is not registered yet; that happens after the testnet deploy.</p>
+  </section>
+
+  <section class="agents">
+    <article class="agent-card" id="copycat-panel">
+      <h2>Copycat agent <span class="tag tag-fixture">Demo fixture</span></h2>
+      <p>Presents a copied Agent Card with an edited endpoint, and a badge id that does not exist in the registry.</p>
+      <p class="mono">badge: NoSuchBadge12345 (fixture)</p>
+      <button data-check="copycat" type="button">Run gate check</button>
+      <p class="verdict" id="verdict-copycat" aria-live="polite">Not checked yet.</p>
+    </article>
+    <article class="agent-card" id="verified-panel">
+      <h2>Verified agent <span class="tag tag-fixture">Demo fixture</span></h2>
+      <p>Registered in the Agent Registry (CIS-8004), owned by a verified account, card hash anchored on chain.</p>
+      <p class="mono">badge: fixture in this demo. In live mode the badge check service resolves the real badge against the registry.</p>
+      <button data-check="verified" type="button">Run gate check</button>
+      <p class="verdict" id="verdict-verified" aria-live="polite">Not checked yet.</p>
+    </article>
+  </section>
+
+  <section>
+    <h2>Audit trail of the last hire <span class="tag tag-fixture">Demo fixture rows</span></h2>
+    <ol class="trail" id="trail">
+      <li>GateChecked: waiting for a check.</li>
+    </ol>
+    <p class="note">In the live build every row links to its transaction on CCDExplorer (testnet) and to the agent's registry entry. See docs/audit-trail.md in the repository.</p>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

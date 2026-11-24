@@ -1,0 +1,19 @@
+:root { color-scheme: light dark; }
+body { font-family: system-ui, sans-serif; margin: 0; line-height: 1.5; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 1rem; }
+.site-header { border-bottom: 1px solid #8884; }
+.brand { font-weight: 700; font-size: 1.25rem; margin-right: 1rem; }
+.net-badge { font-size: 0.85rem; opacity: 0.8; }
+.kicker { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem; opacity: 0.75; }
+.lede { font-size: 1.1rem; }
+.agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.agent-card { border: 1px solid #8886; border-radius: 12px; padding: 1rem; }
+.mono { font-family: ui-monospace, monospace; font-size: 0.85rem; word-break: break-all; }
+button { padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; }
+.verdict.ok { color: #1a7f37; font-weight: 600; }
+.verdict.bad { color: #b42318; font-weight: 600; }
+.trail li { margin: 0.25rem 0; }
+.note { font-size: 0.9rem; opacity: 0.8; }
+.steps li { margin: 0.5rem 0; }
+.tag { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid #8888; border-radius: 999px; padding: 0.1rem 0.5rem; vertical-align: middle; }
+.tag-fixture { opacity: 0.85; }
