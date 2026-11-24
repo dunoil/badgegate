@@ -1,11 +1,13 @@
 # BadgeGate: Path to Production (Final)
 
+Final version, 24 Nov 2026, for the Concordium Trusted Agents Hackathon submission. Live values below are from the deployed testnet demo.
+
 BadgeGate on testnet is the full product shape with test money. Going live is a sequence of swaps, not a redesign: the gate rules, the escrow state machine, and the registry data model do not change.
 
 ## Where the demo stands today
 
-- Escrow contract: Rust, concordium-std 11, built and fully tested, deployment on Concordium testnet in the 28 Nov window. Module reference TO_BE_FILLED, contract index TO_BE_FILLED, explorer link TO_BE_FILLED.
-- Demo agent: registered in the testnet CIS-8004 Agent Registry (index 12802, subindex 0), token id TO_BE_FILLED, badge TO_BE_FILLED, Agent Card at TO_BE_FILLED.
+- Escrow contract: Rust, concordium-std 11, built and fully tested, deployed on Concordium testnet on 24 Nov 2026. Module reference c32fd94ae6bd16b88e6af12dec13b96ba25a48eab329a5767c9ff0765fa03caf, contract index 13153, subindex 0, explorer https://testnet.ccdscan.io (deep link format unverified, transactions are cited by hash in the project description).
+- Demo agent: registered in the testnet CIS-8004 Agent Registry (index 12802, subindex 0), token id 1479, badge JyP9XeEGKMrWwjo74GdGK, Agent Card at https://raw.githubusercontent.com/dunoil/badgegate/main/agents/badgegate-demo-research-agent/agent-card.json.
 - Gate: badge check service verified live against the real testnet registry, including three real third party testnet agents passing the full gate and sampled invalid agents rejected with correct reason codes.
 - Tests: 30 of 30 contract integration tests and 6 of 6 badge check unit tests pass. The compiled module exposes no withdrawal, sweep, or rescue entrypoint.
 

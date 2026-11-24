@@ -2,39 +2,81 @@
 
 No badge, no deal.
 
-BadgeGate is a hire gate for AI agents, built for the Concordium Trusted Agents Hackathon (Encode Club). Before any money moves, BadgeGate checks the agent that wants the job: is it registered in the Concordium Agent Registry, does it carry a Verified by Concordium badge, is its Agent Card the exact card anchored on chain, and is a verified human or business accountable for it? If any check fails, the agent is rejected. If all checks pass, the agent is hired into a CCD escrow on Concordium testnet and paid on delivery, and every step lands in a public audit trail on CCDExplorer.
+BadgeGate is a hire gate for AI agents, built for the Concordium Trusted Agents Hackathon (Encode Club). Before any money moves, BadgeGate checks the agent that wants the job: is it registered in the Concordium Agent Registry, does it carry a Verified by Concordium badge, is its Agent Card the exact card anchored on chain, and is a verified human or business accountable for it? If any check fails, the agent is rejected. If all checks pass, the agent is hired into a CCD escrow on Concordium testnet and paid on delivery, and every step lands in a public audit trail on the testnet explorer.
 
 ## The demo in one paragraph
 
-A copycat agent presents a copied Agent Card and no valid badge. BadgeGate checks the registry, the badge does not resolve, verdict: REJECTED, no job and no money. The real agent presents its badge. Registry status is active, the owner matches, and the SHA-256 hash of its card matches the hash anchored on chain. Verdict: HIRED. The client funds the escrow, the agent delivers, the escrow releases, and the whole hire can be replayed from the audit trail.
+A copycat agent presents a copied Agent Card and no valid badge. BadgeGate checks the registry, the badge does not resolve, verdict: REJECTED, no job and no money. The real agent presents its badge. Registry status is Active, the owner matches, and the SHA-256 hash of its card matches the hash anchored on chain. Verdict: HIRED. A checker records the gate receipt on chain, the client funds the escrow, the agent delivers, the escrow releases, and the whole hire can be replayed from the audit trail.
+
+Demo video (at most 3 minutes): TO_BE_FILLED
+Live frontend demo: https://dunoil.github.io/badgegate/
+
+## Live deployment (Concordium testnet)
+
+- Escrow module reference: c32fd94ae6bd16b88e6af12dec13b96ba25a48eab329a5767c9ff0765fa03caf
+- Escrow contract index: 13153, subindex 0
+- Contract explorer link: https://testnet.ccdscan.io (the testnet explorer; its deep link format could not be verified from the build environment, so use the raw hashes: module deploy 43a3116be17714cd6e1c79012f01116720e2e5054f7128b9138243054ecefed6, contract init bf0953cd452600e5c77fa2b4ff644a0d0c2c0c107f6f7fe76df668d45265c0bb)
+- Demo agent token id: 1479
+- Demo agent badge: JyP9XeEGKMrWwjo74GdGK
+- Demo Agent Card: https://raw.githubusercontent.com/dunoil/badgegate/main/agents/badgegate-demo-research-agent/agent-card.json
+- Example transactions: gate receipt 6169b254d9c6e47fd331cb8e296d675d2e533c3565c34ee49c9ceb815b1cc6fd, job creation d7293791a7efe943620204a26d27fd6ff818a03be0069791fb7c5b84070878d6 (rejected on chain with error SelfHire, code -21: with a single demo account the client and provider would be the same account, which the contract forbids; the completed lifecycle run uses a second testnet account as client), release TO_BE_FILLED
 
 ## What it uses from Concordium
 
-- Agent Registry and CIS-8004: the provider agent is minted as a CIS-2 token, with its Agent Card pointer and card hash anchored on chain.
-- Verified by Concordium badge: the portable trust marker BadgeGate checks before every hire, through the registry badge check endpoint and the hosted Agent Registry MCP server.
-- A native escrow contract on Concordium testnet, written in Rust with concordium-std: payable job creation, delivery with an anchored deliverable hash, release, claim after a 3 day review window, cancel and refund, and ratings that are only possible after a settled payment.
-- x402 and sponsored transactions: the production settlement rail, documented in services/payment-relay. The hackathon MVP settles through the escrow release on testnet, which is a real on chain payment.
+- Agent Registry and CIS-8004: the provider agent is minted as a CIS-2 token on testnet (registry index 12802, subindex 0), with its Agent Card pointer and card hash anchored on chain.
+- Verified by Concordium badge: the portable trust marker BadgeGate checks before every hire, following the official five step verification procedure. The card hash is always computed locally by the check service, never trusted from a served flag.
+- Agent Registry MCP server: the hosted official service is the check transport, and the same check is shaped for agent to agent use before two agents deal with each other.
+- A native escrow contract on Concordium testnet, written in Rust with concordium-std 11: two step gate attestation (a checker records a gate receipt, job creation consumes exactly one receipt and the provider must equal the receipt agent owner), payable job creation, delivery with an anchored deliverable hash, release, claim after a 3 day review window, cancel and refund, and ratings that are only possible after a settled payment.
+- x402 and sponsored transactions: the production settlement rail, documented in services/payment-relay. The hackathon MVP settles through the escrow release on testnet, which is a real on chain payment. No official Concordium hosted public testnet x402 facilitator was found, and this repository says so plainly instead of faking one.
 
 ## Repository layout
 
-- contracts/badgegate-escrow: the Rust escrow contract and its test checklist.
-- services/badge-check: the gate. Badge verification, local card hash verification, and the hire decision with reason codes. Includes unit tests.
+- contracts/badgegate-escrow: the Rust escrow contract, its integration tests, and its test checklist.
+- services/badge-check: the gate. Badge verification, local card hash verification, and the hire decision with reason codes. Includes unit tests and a CLI.
 - services/payment-relay: the x402 settlement hand off, an explicit stub with integration points marked.
-- frontend: a zero build static demo (two agent panels, job board, audit trail view).
+- frontend: a zero build static demo (two agent panels, job board, audit trail view). Demo fixtures are labelled as fixtures wherever live data is not used.
 - docs: the audit trail design and the path to production.
 - examples: the demo provider Agent Card in ERC-8004 registration file format.
+- scripts: the testnet client wrapper used for deployment (reads proxy settings from the environment at run time, stores no credentials).
 
-## Status
+## Running the checks locally
 
-Implemented and tested, 24 Nov 2026. Deployment to Concordium testnet is pending a testnet wallet step and will be recorded here with its contract index and explorer links once it is real. Nothing in this repository claims a deployment that has not happened.
+Badge check service (Node 20 or later, no dependencies):
 
-- Escrow contract: full Rust implementation (concordium-std 11), two step gate attestation included. Test suite: 30 of 30 integration tests pass against the compiled module, and the module was inspected to confirm it exposes no withdrawal, sweep, or rescue entrypoint.
-- Badge check service: 6 of 6 unit tests pass, and live mode is verified against the real testnet Agent Registry (CIS-8004 index 12802, subindex 0): three real testnet agents (token ids 500, 1000, and 1477) passed the full gate end to end, and sampled invalid agents were rejected with the correct reason codes (CARD_UNREACHABLE, CARD_HASH_MISMATCH, BADGE_NOT_FOUND). A real mainnet badge also passed the full gate.
-- Frontend demo: static demo with the three step story and clearly labelled demo fixtures; live mode wires in after our own agent is registered.
+```bash
+cd services/badge-check
+npm test
+```
+
+Live badge check against the testnet registry:
+
+```bash
+node src/cli.js <BADGE_OR_TOKEN_ID> --network testnet
+```
+
+Escrow contract tests (Rust with the Concordium toolchain, see the project notes in contracts/badgegate-escrow/Cargo.toml for pinned versions: concordium-std 11, cargo-concordium 5, concordium-client 10):
+
+```bash
+cd contracts/badgegate-escrow
+cargo concordium build -e -o module.wasm.v1
+cargo test
+```
+
+Current results: 30 of 30 contract integration tests pass against the compiled module, and 6 of 6 badge check unit tests pass. Live testnet evidence: three real testnet registry agents (token ids 500, 1000, and 1477) passed the full gate end to end, and sampled invalid agents were rejected with the correct reason codes.
 
 ## Safety properties
 
-- The escrow contract has no owner withdrawal function. Escrowed CCD can only go to the job's provider on settlement, or back to the job's client on a valid cancel or refund.
+- The escrow contract has no owner withdrawal, sweep, or rescue function. This was verified by inspecting the compiled module: its entrypoints are exactly init, recordGate, createJob, acceptJob, deliverJob, releaseJob, claimAfterWindow, cancelJob, rateJob, setJobCreationPaused, getJob, jobCount, getProviderStats, and isChecker.
+- Escrowed CCD can only go to the job provider on settlement, or back to the job client on a valid cancel or refund.
 - The owner can only pause new job creation. Pausing never blocks payouts, refunds, deliveries, or claims on existing jobs.
+- One gate receipt hires exactly one job, and only for the agent owner named in the receipt.
 - Reputation is derived only from settled, paid jobs. A rating without a settled job is impossible by construction.
-- BadgeGate never asks for seed phrases, private keys, or documents. Identity verification happens only inside the official Concordium wallet and identity provider flow.
+- BadgeGate never asks for seed phrases, private keys, or documents. Identity steps happen only inside the official Concordium wallet and identity provider flow, and the testnet identity used here is issued without real document verification.
+
+## Status
+
+Built starting 24 Nov 2026 for the Concordium Trusted Agents Hackathon. Submission deadline 9 Dec 2026, 23:59 UTC. Everything runs on Concordium testnet with test CCD from the faucet. Total spend: zero.
+
+## License
+
+MIT. See LICENSE.
