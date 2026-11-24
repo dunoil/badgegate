@@ -34,7 +34,7 @@
         "description": "Verified by Concordium badge, on-chain agent identity in a CIS-8004 registry",
         "required": false,
         "params": {
-          "tokenAddress": null,
+          "tokenAddress": "ccd:4221332d34e1694168c2a0c0b3fd0f27/cis-2:JyP9XeEGKMrWwjo74GdGK",
           "owner": {
             "account": "ccd:4221332d34e1694168c2a0c0b3fd0f27:43GQBGRBSet41XhHLwppEacq8eF3BzRrZYhKUG3zYC44jrMwrc"
           },
@@ -46,7 +46,7 @@
           "verify": "Resolve tokenAddress via CIS-8004 agent_of; confirm owner + status=Active + card SHA-256 == metadata_hash.",
           "verification": {
             "service": "Concordium Agent Registry",
-            "verifyUrl": "https://agent-registry-mcp.concordium.com/v1/badge-check/43GQBGRBSet41XhHLwppEacq8eF3BzRrZYhKUG3zYC44jrMwrc",
+            "verifyUrl": "https://agent-registry-mcp.concordium.com/v1/badge-check/JyP9XeEGKMrWwjo74GdGK",
             "mcp": "https://agent-registry-mcp.concordium.com/mcp",
             "docs": "https://docs.concordium.com/en/mainnet/technical-reference/agent-registry/concordium-badge.html"
           }
@@ -58,5 +58,11 @@
     "organization": "BadgeGate, solo build by @dunoil for the Concordium Trusted Agents Hackathon",
     "url": "https://github.com/dunoil/badgegate"
   },
-  "documentationUrl": "https://github.com/dunoil/badgegate"
+  "documentationUrl": "https://github.com/dunoil/badgegate",
+  "registrations": [
+    {
+      "agentId": 1479,
+      "agentRegistry": "ccd:4221332d34e1694168c2a0c0b3fd0f27:12802.0"
+    }
+  ]
 }
