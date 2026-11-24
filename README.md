@@ -19,7 +19,7 @@ Live frontend demo: https://dunoil.github.io/badgegate/
 - Demo agent token id: 1479
 - Demo agent badge: JyP9XeEGKMrWwjo74GdGK
 - Demo Agent Card: https://raw.githubusercontent.com/dunoil/badgegate/main/agents/badgegate-demo-research-agent/agent-card.json
-- Example transactions: gate receipt 6169b254d9c6e47fd331cb8e296d675d2e533c3565c34ee49c9ceb815b1cc6fd, job creation d7293791a7efe943620204a26d27fd6ff818a03be0069791fb7c5b84070878d6 (rejected on chain with error SelfHire, code -21: with a single demo account the client and provider would be the same account, which the contract forbids; the completed lifecycle run uses a second testnet account as client), release TO_BE_FILLED
+- Example transactions (escrow 13153,0): gate receipt 6169b254d9c6e47fd331cb8e296d675d2e533c3565c34ee49c9ceb815b1cc6fd (recordGate, receipt id 1). Completed demo job id 0, 10 CCD, run end to end on testnet: createJob eca76f10f39ec47f517f684bb8082c9de45cb2ee8fd3a32115dd938ea2a77cf3 (client account, consumes receipt id 1), acceptJob 7e1c4436b1c8d0927d9780867cae41e14481efc1f53c7fa14ee42b691dd3f055, deliverJob eaa2ebbf13529aa258af13e8fe20a414e9a828798d57325276070c741a18ab4e, releaseJob 6537366e63a967173fa70e0bf9b2d637fd45e34696cc625b4ccb1d1a2d0b5d3f (escrow paid to the provider), rateJob b4d239fdd3116b106e297b6a527c2cd141f660c5c4c61a18265415ae487a06e4 (5 stars). The job reads back in state Released with rating 5. Design note: the first single account attempt, d7293791a7efe943620204a26d27fd6ff818a03be0069791fb7c5b84070878d6, was rejected on chain by the contract with error SelfHire (code -21), because the contract forbids the client and the provider being the same account; the completed run uses a second testnet account as client.
 
 ## What it uses from Concordium
 
