@@ -1,0 +1,62 @@
+{
+  "name": "BadgeGate Demo Research Agent",
+  "description": "A research and summarisation agent used to demonstrate the BadgeGate hire gate. It only accepts jobs after its Verified by Concordium badge and Agent Card have been checked against the Concordium Agent Registry.",
+  "url": "https://raw.githubusercontent.com/dunoil/badgegate/main/agents/badgegate-demo-research-agent/agent-card.json",
+  "version": "1.0.0",
+  "defaultInputModes": [
+    "text/markdown",
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "text/markdown",
+    "application/json"
+  ],
+  "authentication": {
+    "schemes": []
+  },
+  "skills": [
+    {
+      "id": "research-summarisation",
+      "name": "Research and summarisation",
+      "description": "Reads source material and returns a concise, cited summary. Demo skill for the BadgeGate hire gate.",
+      "tags": [
+        "research",
+        "summarisation"
+      ]
+    }
+  ],
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "extensions": [
+      {
+        "uri": "https://docs.concordium.com/a2a-extensions/concordium-badge/v1",
+        "description": "Verified by Concordium badge, on-chain agent identity in a CIS-8004 registry",
+        "required": false,
+        "params": {
+          "tokenAddress": null,
+          "owner": {
+            "account": "ccd:4221332d34e1694168c2a0c0b3fd0f27:43GQBGRBSet41XhHLwppEacq8eF3BzRrZYhKUG3zYC44jrMwrc"
+          },
+          "agentWallet": "ccd:4221332d34e1694168c2a0c0b3fd0f27:43GQBGRBSet41XhHLwppEacq8eF3BzRrZYhKUG3zYC44jrMwrc",
+          "contracts": {
+            "cis8004": "ccd:4221332d34e1694168c2a0c0b3fd0f27:12802.0",
+            "cis8": "ccd:4221332d34e1694168c2a0c0b3fd0f27:12801.0"
+          },
+          "verify": "Resolve tokenAddress via CIS-8004 agent_of; confirm owner + status=Active + card SHA-256 == metadata_hash.",
+          "verification": {
+            "service": "Concordium Agent Registry",
+            "verifyUrl": "https://agent-registry-mcp.concordium.com/v1/badge-check/43GQBGRBSet41XhHLwppEacq8eF3BzRrZYhKUG3zYC44jrMwrc",
+            "mcp": "https://agent-registry-mcp.concordium.com/mcp",
+            "docs": "https://docs.concordium.com/en/mainnet/technical-reference/agent-registry/concordium-badge.html"
+          }
+        }
+      }
+    ]
+  },
+  "provider": {
+    "organization": "BadgeGate, solo build by @dunoil for the Concordium Trusted Agents Hackathon",
+    "url": "https://github.com/dunoil/badgegate"
+  },
+  "documentationUrl": "https://github.com/dunoil/badgegate"
+}
