@@ -6,10 +6,18 @@
 // https://agent-registry-mcp.concordium.com/mcp, which is how an agent
 // checks another agent before dealing with it.
 //
-// Endpoint shape (to be re verified against the official badge reference
-// on 25 Nov, see project RESEARCH.md section 9):
+// Endpoint shape (verified live against the real endpoint on 24 and
+// 25 Nov 2026, see project RESEARCH.md section 9 and AUDIT.md finding F1):
 //   GET {base}/v1/badge-check/{badgeId}?network={mainnet|testnet}
-//   -> { on_chain: { status, agent_uri, metadata_hash_hex, owner, ... } }
+//   -> { on_chain: { status, agent_uri, metadata_hash_hex,
+//                    owner_account, ... } }
+// The owner field is named owner_account, NOT owner. An earlier version of
+// this client returned the raw on_chain object and the gate read
+// record.owner, which was always undefined, so the owner check silently
+// never ran (AUDIT.md F1). fetchBadgeRecord therefore normalizes the
+// record here: the returned object always carries the verified owner in
+// the `owner` field the gate reads, sourced from owner_account (falling
+// back to a plain owner field only if a future endpoint renames it back).
 
 export const DEFAULT_BASE = "https://agent-registry-mcp.concordium.com";
 
@@ -21,7 +29,8 @@ export async function fetchBadgeRecord(badgeId, { network = "mainnet", base = DE
   if (res.status === 404 || res.status === 400) return null;
   if (!res.ok) throw new Error(`badge check endpoint returned ${res.status}`);
   const body = await res.json();
-  return body.on_chain ?? body;
+  const onChain = body.on_chain ?? body;
+  return { ...onChain, owner: onChain.owner_account ?? onChain.owner };
 }
 
 export async function fetchCardBytes(agentUri, { fetchImpl = fetch } = {}) {

@@ -31,7 +31,13 @@ export function decideGate({ record, cardBytes, claimedOwner }) {
   if (String(record.status).toLowerCase() !== "active") {
     return { allow: false, reason: Reason.AGENT_NOT_ACTIVE, status: record.status };
   }
-  if (claimedOwner && record.owner && claimedOwner !== record.owner) {
+  // Owner verification fails closed (AUDIT.md F1 and F6). The record here
+  // is the normalized record from fetchBadgeRecord, whose owner field is
+  // the verified owner_account from the registry endpoint. If a caller
+  // claims an owner and the record carries none, or carries a different
+  // one, the hire is denied: a missing owner must never silently skip
+  // this check again.
+  if (claimedOwner && claimedOwner !== record.owner) {
     return { allow: false, reason: Reason.OWNER_MISMATCH, owner: record.owner };
   }
   if (!cardBytes) {
@@ -46,6 +52,7 @@ export function decideGate({ record, cardBytes, claimedOwner }) {
     allow: true,
     reason: Reason.OK,
     receipt: {
+      // The verified owner from the registry record, never the claim.
       badgeOwner: record.owner,
       agentUri: record.agent_uri,
       cardHashHex: localHash,

@@ -31,6 +31,15 @@ use concordium_std::*;
 pub const CLAIM_WINDOW_SECONDS: u64 = 3 * 24 * 60 * 60;
 const CLAIM_WINDOW_MS: u64 = CLAIM_WINDOW_SECONDS * 1000;
 
+/// A gate receipt stays fresh for 7 days after the check ran (AUDIT.md
+/// finding F3, fixed 25 Nov 2026). createJob rejects an older receipt, so
+/// a receipt recorded before an agent was revoked or re anchored cannot be
+/// consumed forever.
+const RECEIPT_MAX_AGE_MS: u64 = 7 * 24 * 60 * 60 * 1000;
+/// A receipt may be dated slightly ahead of the block slot time, to allow
+/// for checker clock skew. Anything further ahead is rejected.
+const RECEIPT_FUTURE_TOLERANCE_MS: u64 = 5 * 60 * 1000;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serial, Deserial, SchemaType)]
 pub enum JobState {
     Open,
@@ -163,6 +172,15 @@ pub enum Error {
     /// serialised ordinals of every earlier variant are unchanged.
     EmptyBadgeId,
     EmptyCardHash,
+    /// Appended at the end in the audit fix pass (25 Nov 2026), again so
+    /// the serialised ordinals of every earlier variant are unchanged.
+    /// deliverJob was called after the job deadline (AUDIT.md F2).
+    DeliveryLate,
+    /// The gate receipt is older than the freshness window (AUDIT.md F3).
+    ReceiptStale,
+    /// The gate receipt is dated ahead of slot time beyond the tolerance
+    /// (AUDIT.md F3).
+    ReceiptFutureDated,
 }
 
 type ContractResult<A> = Result<A, Error>;
@@ -209,6 +227,23 @@ fn invoker_account(ctx: &ReceiveContext) -> ContractResult<AccountAddress> {
 
 fn now_ms(ctx: &ReceiveContext) -> u64 {
     ctx.metadata().slot_time().timestamp_millis()
+}
+
+/// Receipt freshness (AUDIT.md F3): a receipt must have been checked at
+/// most RECEIPT_MAX_AGE_MS ago, and must not be dated ahead of slot time
+/// by more than the clock skew tolerance. Enforced in both recordGate and
+/// createJob, so a stale or future dated receipt can neither be recorded
+/// nor consumed.
+fn ensure_receipt_fresh(checked_at_ms: u64, now: u64) -> ContractResult<()> {
+    ensure!(
+        checked_at_ms <= now + RECEIPT_FUTURE_TOLERANCE_MS,
+        Error::ReceiptFutureDated
+    );
+    ensure!(
+        now.saturating_sub(checked_at_ms) <= RECEIPT_MAX_AGE_MS,
+        Error::ReceiptStale
+    );
+    Ok(())
 }
 
 fn settle_stats<S: HasStateApi>(
@@ -274,6 +309,7 @@ fn contract_record_gate(
     let invoker = invoker_account(ctx)?;
     ensure!(!receipt.badge_id.is_empty(), Error::EmptyBadgeId);
     ensure!(receipt.card_hash != [0u8; 32], Error::EmptyCardHash);
+    ensure_receipt_fresh(receipt.checked_at_ms, now_ms(ctx))?;
     let state = host.state_mut();
     ensure!(state.checkers.contains(&invoker), Error::NotChecker);
     let receipt_id = state.next_receipt_id;
@@ -322,6 +358,7 @@ fn contract_create_job(
             stored.receipt.agent_owner == params.provider,
             Error::ProviderMismatch
         );
+        ensure_receipt_fresh(stored.receipt.checked_at_ms, now_ms(ctx))?;
         stored.receipt.clone()
     };
     if let Some(mut stored) = state.receipts.get_mut(&params.receipt_id) {
@@ -410,6 +447,11 @@ fn contract_deliver_job(
     let mut job = state.jobs.get_mut(&params.job_id).ok_or(Error::JobNotFound)?;
     ensure!(job.provider == invoker, Error::NotProvider);
     ensure!(job.state == JobState::Accepted, Error::WrongState);
+    // AUDIT.md F2, fixed 25 Nov 2026: delivery after the deadline is
+    // rejected, mirroring acceptJob. A late delivery must not close the
+    // client's refund path (cancel after the deadline) or unlock the
+    // claim window.
+    ensure!(now_ms(ctx) <= job.deadline_ms, Error::DeliveryLate);
     job.deliverable_hash = params.deliverable_hash;
     job.delivered_at_ms = now_ms(ctx);
     job.state = JobState::Delivered;

@@ -1,15 +1,15 @@
 # BadgeGate: Path to Production (Final)
 
-Final version, 24 Nov 2026, for the Concordium Trusted Agents Hackathon submission. Live values below are from the deployed testnet demo.
+Final version, 24 Nov 2026, updated 25 Nov 2026 after the security audit fix pass and redeploy. Live values below are from the deployed testnet demo.
 
 BadgeGate on testnet is the full product shape with test money. Going live is a sequence of swaps, not a redesign: the gate rules, the escrow state machine, and the registry data model do not change.
 
 ## Where the demo stands today
 
-- Escrow contract: Rust, concordium-std 11, built and fully tested, deployed on Concordium testnet on 24 Nov 2026. Module reference c32fd94ae6bd16b88e6af12dec13b96ba25a48eab329a5767c9ff0765fa03caf, contract index 13153, subindex 0, explorer record on CCDScan testnet: https://testnet.ccdscan.io/?dcount=1&dentity=contract&dcontractAddressIndex=13153&dcontractAddressSubIndex=0 (CCDScan drawer link format verified 25 Nov 2026; transactions are linked by hash in the project description).
+- Escrow contract: Rust, concordium-std 11, built and fully tested, deployed on Concordium testnet (first deployment 24 Nov 2026; current instance redeployed 25 Nov 2026 after the audit fix pass described in step 6). Module reference f73828b9ec0f9774cbbc9a9c453fcd5b4c2e8de016e3cb6b345fe0a82e1d557a, contract index 13158, subindex 0, explorer record on CCDScan testnet: https://testnet.ccdscan.io/?dcount=1&dentity=contract&dcontractAddressIndex=13158&dcontractAddressSubIndex=0 (CCDScan drawer link format verified 25 Nov 2026; transactions are linked by hash in the project description).
 - Demo agent: registered in the testnet CIS-8004 Agent Registry (index 12802, subindex 0), token id 1479, badge JyP9XeEGKMrWwjo74GdGK, Agent Card at https://raw.githubusercontent.com/dunoil/badgegate/main/agents/badgegate-demo-research-agent/agent-card.json.
 - Gate: badge check service verified live against the real testnet registry, including three real third party testnet agents passing the full gate and sampled invalid agents rejected with correct reason codes.
-- Tests: 30 of 30 contract integration tests and 6 of 6 badge check unit tests pass. The compiled module exposes no withdrawal, sweep, or rescue entrypoint.
+- Tests: 36 of 36 contract integration tests and 10 of 10 badge check unit tests pass. The compiled module exposes no withdrawal, sweep, or rescue entrypoint.
 
 ## Step 1: Trustless badge reads
 
@@ -33,7 +33,13 @@ The audit trail becomes an exportable, signed record per hire: JSON plus the exp
 
 ## Step 6: Operations hardening (small, named)
 
-- Gate receipt freshness: receipts currently carry the check timestamp (checked_at_ms) but the contract does not expire them. Production adds a validity window at job creation so a stale pass cannot hire after a badge status change, plus a re check at acceptance for long running jobs.
+Two items that earlier drafts of this document listed as future hardening were found by a security audit on 25 Nov 2026, fixed the same day, and are live in the current deployment:
+
+- Gate receipt freshness: FIXED. The contract now enforces a 7 day validity window on gate receipts at both recordGate and createJob, and rejects receipts dated ahead of the block slot time beyond a 5 minute clock skew tolerance, so a stale pass cannot hire after a badge status change. Proven live on testnet: a receipt dated 8 days in the past was rejected on chain with the new ReceiptStale error (code -25), and a future dated receipt with ReceiptFutureDated (code -26). The badge service owner check was fixed in the same pass: it now reads the owner from the field the registry endpoint actually sends and fails closed, with regression tests. Remaining production item: a re check at acceptance for long running jobs.
+- Late delivery: FIXED. deliverJob now rejects delivery after the job deadline with the new DeliveryLate error, so a late delivery cannot close the client's refund path or unlock the claim window. Proven live on testnet: a delivery attempted after a 150 second deadline was rejected on chain (code -24), and the client then cancelled the job and recovered the escrow in full.
+
+Still open, as production work:
+
 - Checker key management: the demo checker is one account. Production runs the checker as a hosted service account with rotation, and the allowlist is refreshed by deploying with the rotated set or by an owner managed checker update if the contract is extended.
 - Rate limits and card fetch safety: the check service caps card fetch size and time today at the service layer; production adds registry level caching with hash revalidation.
 

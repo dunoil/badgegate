@@ -115,9 +115,12 @@ fn invoke_view<T: concordium_contracts_common::Deserial>(
 }
 
 fn record_receipt(s: &mut Setup, owner: AccountAddress) -> u64 {
-    let id = s.chain.block_time().timestamp_millis(); // placeholder, replaced below
-    let _ = id;
-    let res = update(s, CHECKER, Amount::zero(), "recordGate", &receipt_for(owner))
+    // Since the audit fix pass (25 Nov 2026) the contract enforces receipt
+    // freshness, so the helper stamps the receipt with the chain's current
+    // block time, like a real checker recording a check it just ran.
+    let mut receipt = receipt_for(owner);
+    receipt.checked_at_ms = s.chain.block_time().timestamp_millis();
+    let res = update(s, CHECKER, Amount::zero(), "recordGate", &receipt)
         .expect("checker records a receipt");
     res.parse_return_value().expect("receipt id parses")
 }
@@ -490,4 +493,91 @@ fn checker_view_reports_allowlist() {
     let no: bool = invoke_view(&s, "isChecker", &STRANGER);
     assert!(yes);
     assert!(!no);
+}
+
+// ---------------------------------------------------------------------------
+// Audit fix pass, 25 Nov 2026: F2 (late delivery) and F3 (receipt freshness)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn deliver_after_deadline_fails_and_refund_path_survives() {
+    let mut s = setup();
+    let receipt = record_receipt(&mut s, PROVIDER);
+    let job = create_job(&mut s, receipt, PROVIDER);
+    update(&mut s, PROVIDER, Amount::zero(), "acceptJob", &job).expect("provider accepts");
+    s.chain.tick_block_time(Duration::from_millis(DEADLINE_MS + 1)).expect("tick");
+    let deliver = DeliverParams { job_id: job, deliverable_hash: [9u8; 32] };
+    let res = update(&mut s, PROVIDER, Amount::zero(), "deliverJob", &deliver);
+    assert!(res.is_err(), "delivery after the deadline must fail (F2)");
+    // The job stays Accepted, so the client's refund path is intact.
+    let stored: Job = invoke_view(&s, "getJob", &job);
+    assert_eq!(stored.state, badgegate_escrow::JobState::Accepted);
+    update(&mut s, CLIENT, Amount::zero(), "cancelJob", &job)
+        .expect("client can still cancel after the deadline");
+    assert_eq!(s.chain.contract_balance(s.address), Some(Amount::zero()));
+}
+
+#[test]
+fn create_job_with_aged_out_receipt_fails() {
+    let mut s = setup();
+    // Recorded fresh, then 8 days pass before anyone hires against it:
+    // past the 7 day freshness window, so createJob must reject it (F3).
+    let receipt = record_receipt(&mut s, PROVIDER);
+    s.chain.tick_block_time(Duration::from_millis(8 * DAY_MS)).expect("tick");
+    let params = CreateJobParams {
+        provider: PROVIDER,
+        description_uri: "ipfs://job-spec".to_string(),
+        deadline_ms: 20 * DAY_MS,
+        receipt_id: receipt,
+    };
+    let res = update(&mut s, CLIENT, Amount::from_ccd(ESCROW), "createJob", &params);
+    assert!(res.is_err(), "a receipt older than 7 days must not hire (F3)");
+}
+
+#[test]
+fn create_job_with_fresh_receipt_after_time_passes_works() {
+    let mut s = setup();
+    // Time passing alone does not break anything: a receipt recorded now
+    // still hires, with a deadline ahead of the new slot time.
+    s.chain.tick_block_time(Duration::from_millis(8 * DAY_MS)).expect("tick");
+    let receipt = record_receipt(&mut s, PROVIDER);
+    let params = CreateJobParams {
+        provider: PROVIDER,
+        description_uri: "ipfs://job-spec".to_string(),
+        deadline_ms: 20 * DAY_MS,
+        receipt_id: receipt,
+    };
+    let res = update(&mut s, CLIENT, Amount::from_ccd(ESCROW), "createJob", &params)
+        .expect("a fresh receipt hires fine");
+    let job_id: u64 = res.parse_return_value().expect("job id parses");
+    assert_eq!(job_id, 0);
+}
+
+#[test]
+fn record_gate_with_stale_timestamp_fails() {
+    let mut s = setup();
+    s.chain.tick_block_time(Duration::from_millis(8 * DAY_MS)).expect("tick");
+    // receipt_for stamps checked_at_ms 1_000 (January 1970), which is now
+    // more than 7 days behind slot time.
+    let res = update(&mut s, CHECKER, Amount::zero(), "recordGate", &receipt_for(PROVIDER));
+    assert!(res.is_err(), "recording a stale receipt must fail (F3)");
+}
+
+#[test]
+fn record_gate_with_future_timestamp_fails() {
+    let mut s = setup();
+    let mut receipt = receipt_for(PROVIDER);
+    receipt.checked_at_ms = s.chain.block_time().timestamp_millis() + 60 * 60 * 1000;
+    let res = update(&mut s, CHECKER, Amount::zero(), "recordGate", &receipt);
+    assert!(res.is_err(), "recording a future dated receipt must fail (F3)");
+}
+
+#[test]
+fn record_gate_with_slightly_future_timestamp_within_tolerance_works() {
+    let mut s = setup();
+    let mut receipt = receipt_for(PROVIDER);
+    // One minute of checker clock skew is inside the 5 minute tolerance.
+    receipt.checked_at_ms = s.chain.block_time().timestamp_millis() + 60 * 1000;
+    let res = update(&mut s, CHECKER, Amount::zero(), "recordGate", &receipt);
+    assert!(res.is_ok(), "a receipt within the clock skew tolerance records fine");
 }
