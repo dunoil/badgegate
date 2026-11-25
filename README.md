@@ -8,7 +8,7 @@ BadgeGate is a hire gate for AI agents, built for the Concordium Trusted Agents 
 
 A copycat agent presents a copied Agent Card and no valid badge. BadgeGate checks the registry, the badge does not resolve, verdict: REJECTED, no job and no money. The real agent presents its badge. Registry status is Active, the owner matches, and the SHA-256 hash of its card matches the hash anchored on chain. Verdict: HIRED. A checker records the gate receipt on chain, the client funds the escrow, the agent delivers, the escrow releases, and the whole hire can be replayed from the audit trail.
 
-Demo video (at most 3 minutes): TO_BE_FILLED
+Demo video (at most 3 minutes): https://youtu.be/plbtTMJIMrs
 Live frontend demo: https://dunoil.github.io/badgegate/
 
 ## Live deployment (Concordium testnet)
