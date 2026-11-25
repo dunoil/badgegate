@@ -11,7 +11,7 @@
 <header class="site-header">
   <div class="wrap">
     <span class="brand">BadgeGate</span>
-    <span class="net-badge">Concordium testnet demo. Demo mode uses recorded registry fixtures. Live mode calls the real badge check service.</span>
+    <span class="net-badge">Concordium testnet. The two agent panels run on recorded fixtures, labelled as fixtures. The live badge check below runs the real gate against the testnet registry in your browser.</span>
   </div>
 </header>
 <main class="wrap">
@@ -28,7 +28,7 @@
       <li><strong>Step 2, the verified agent is hired and paid.</strong> A registered agent passes every gate check: registry status Active, owner matched, and the SHA-256 hash of its Agent Card matches the hash anchored on chain. It is hired into a CCD escrow, delivers, and the escrow pays out.</li>
       <li><strong>Step 3, the audit trail.</strong> Every step, gate check, hire, delivery, and payment, is recorded in order, so a human can later see exactly what the agent did and why it was trusted.</li>
     </ol>
-    <p class="note"><strong>What is live and what is a fixture:</strong> the two panels below run on recorded demo fixtures and are labelled as fixtures. Separately, the same gate code has been run live: on Concordium mainnet a real badge passed the full gate on 24 Nov 2026, and on Concordium testnet three real registered agents passed the full gate on 24 Nov 2026 (token ids 500, 1000, and 1477 in the testnet CIS-8004 registry, index 12802,0). An invented badge was rejected on both networks. Our own demo agent is now registered on testnet as token id 1479 with badge JyP9XeEGKMrWwjo74GdGK, and it passed the full gate live on 24 Nov 2026. The escrow contract is deployed on testnet at index 13153, subindex 0, and a gate receipt for our agent is recorded on it (transaction 6169b254d9c6e47fd331cb8e296d675d2e533c3565c34ee49c9ceb815b1cc6fd).</p>
+    <p class="note"><strong>What is live and what is a fixture:</strong> the two panels below run on recorded demo fixtures and are labelled as fixtures, and the live badge check panel below them runs the same gate code against the real testnet registry in your browser. The same gate code has also been run live from the command line: on Concordium mainnet a real badge passed the full gate on 24 Nov 2026, and on Concordium testnet three real registered agents passed the full gate on 24 Nov 2026 (token ids 500, 1000, and 1477 in the testnet CIS-8004 registry, index 12802,0). An invented badge was rejected on both networks. Our own demo agent is now registered on testnet as token id 1479 with badge JyP9XeEGKMrWwjo74GdGK, and it passed the full gate live on 24 Nov 2026. The escrow contract is deployed on testnet at index 13153, subindex 0, and a gate receipt for our agent is recorded on it (transaction 6169b254d9c6e47fd331cb8e296d675d2e533c3565c34ee49c9ceb815b1cc6fd).</p>
   </section>
 
   <section class="agents">
@@ -42,9 +42,31 @@
     <article class="agent-card" id="verified-panel">
       <h2>Verified agent <span class="tag tag-fixture">Demo fixture</span></h2>
       <p>Registered in the Agent Registry (CIS-8004), owned by a verified account, card hash anchored on chain.</p>
-      <p class="mono">badge: fixture in this demo. In live mode the badge check service resolves the real badge against the registry.</p>
+      <p class="mono">badge: fixture in this demo. The live badge check panel below resolves real badges against the registry.</p>
       <button data-check="verified" type="button">Run gate check</button>
       <p class="verdict" id="verdict-verified" aria-live="polite">Not checked yet.</p>
+    </article>
+  </section>
+
+  <section class="live-check">
+    <article class="agent-card live-card">
+      <h2>Live badge check <span class="tag tag-live">Live, testnet registry</span></h2>
+      <p>This panel runs the real BadgeGate gate in your browser, the same logic as the badge check service in the repository (services/badge-check). It fetches the badge record from the Concordium Agent Registry badge check endpoint, fetches the Agent Card from the URI registered on chain, recomputes the card SHA-256 locally with Web Crypto, and compares it to the hash anchored on chain. Nothing here is simulated: change the badge id and the verdict comes from the live testnet registry.</p>
+      <label>Badge id (token address)
+        <input id="live-badge" type="text" value="JyP9XeEGKMrWwjo74GdGK" autocomplete="off" spellcheck="false">
+      </label>
+      <label>Claimed owner account (optional, checked against the registry record)
+        <input id="live-owner" type="text" value="43GQBGRBSet41XhHLwppEacq8eF3BzRrZYhKUG3zYC44jrMwrc" autocomplete="off" spellcheck="false">
+      </label>
+      <button id="live-run" type="button">Run live gate check</button>
+      <p class="verdict" id="live-verdict" aria-live="polite">Not checked yet.</p>
+      <dl class="live-details" id="live-details" hidden>
+        <div><dt>Registry status</dt><dd id="live-status"></dd></div>
+        <div><dt>Owner on chain</dt><dd id="live-owner-onchain" class="mono"></dd></div>
+        <div><dt>Agent Card</dt><dd id="live-card-uri" class="mono"></dd></div>
+        <div><dt>Card SHA-256 computed in this browser</dt><dd id="live-local-hash" class="mono"></dd></div>
+        <div><dt>Card SHA-256 anchored on chain</dt><dd id="live-anchored-hash" class="mono"></dd></div>
+      </dl>
     </article>
   </section>
 
@@ -53,9 +75,23 @@
     <ol class="trail" id="trail">
       <li>GateChecked: waiting for a check.</li>
     </ol>
-    <p class="note">In the live build every row links to its transaction on CCDExplorer (testnet) and to the agent's registry entry. See docs/audit-trail.md in the repository.</p>
+    <p class="note">Rows added here by the two panels above are demo fixtures. The audit trail of the real demo hire, with a CCDScan testnet link for every step, is listed in the next section. See docs/audit-trail.md in the repository for the design.</p>
+  </section>
+
+  <section>
+    <h2>Audit trail of the real demo hire <span class="tag tag-live">Live on testnet</span></h2>
+    <ol class="trail">
+      <li>GateRecorded and GateAttested: the checker recorded the passing gate result for badge JyP9XeEGKMrWwjo74GdGK on the escrow, gate receipt id 1. <a href="https://testnet.ccdscan.io/?dcount=1&amp;dentity=transaction&amp;dhash=6169b254d9c6e47fd331cb8e296d675d2e533c3565c34ee49c9ceb815b1cc6fd">CCDScan record</a></li>
+      <li>JobCreated: the client funded the escrow with 10 CCD, job id 0, consuming receipt id 1. <a href="https://testnet.ccdscan.io/?dcount=1&amp;dentity=transaction&amp;dhash=eca76f10f39ec47f517f684bb8082c9de45cb2ee8fd3a32115dd938ea2a77cf3">CCDScan record</a></li>
+      <li>JobAccepted: the provider accepted the job. <a href="https://testnet.ccdscan.io/?dcount=1&amp;dentity=transaction&amp;dhash=7e1c4436b1c8d0927d9780867cae41e14481efc1f53c7fa14ee42b691dd3f055">CCDScan record</a></li>
+      <li>JobDelivered: the provider delivered, with the deliverable hash anchored on chain. <a href="https://testnet.ccdscan.io/?dcount=1&amp;dentity=transaction&amp;dhash=eaa2ebbf13529aa258af13e8fe20a414e9a828798d57325276070c741a18ab4e">CCDScan record</a></li>
+      <li>JobReleased: the client released the escrow, 10 CCD paid to the provider. <a href="https://testnet.ccdscan.io/?dcount=1&amp;dentity=transaction&amp;dhash=6537366e63a967173fa70e0bf9b2d637fd45e34696cc625b4ccb1d1a2d0b5d3f">CCDScan record</a></li>
+      <li>JobRated: the paying client rated the settled job 5 stars. Final job state read back from the contract: Released, rating 5. <a href="https://testnet.ccdscan.io/?dcount=1&amp;dentity=transaction&amp;dhash=b4d239fdd3116b106e297b6a527c2cd141f660c5c4c61a18265415ae487a06e4">CCDScan record</a></li>
+    </ol>
+    <p class="note">Every link opens the real transaction on CCDScan testnet. The escrow contract itself is <a href="https://testnet.ccdscan.io/?dcount=1&amp;dentity=contract&amp;dcontractAddressIndex=13153&amp;dcontractAddressSubIndex=0">index 13153, subindex 0</a>, and the demo agent registration is <a href="https://testnet.ccdscan.io/?dcount=1&amp;dentity=transaction&amp;dhash=0858a10d42bf7ab6572ffa78468ab7adfee2cb6cbd5dc07d7c0f22a2429735f8">this transaction</a>. CCDExplorer testnet was unreachable from the build environment, so CCDScan is the explorer linked here.</p>
   </section>
 </main>
+<script src="live-gate.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
